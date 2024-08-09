@@ -46,6 +46,24 @@ def get_transcript(video_id):
         return "Transcript not available"
 
 
+def chunk_transcript(transcript, max_length=5000):
+    chunks = []
+    current_chunk = ""
+    words = transcript.split()
+
+    for word in words:
+        if len(current_chunk) + len(word) + 1 > max_length:
+            chunks.append(current_chunk.strip())
+            current_chunk = word + " "
+        else:
+            current_chunk += word + " "
+
+    if current_chunk:
+        chunks.append(current_chunk.strip())
+
+    return chunks
+
+
 def save_to_json(data, filename='video_transcripts.json'):
     filepath = os.path.join('out', filename)
     with open(filepath, 'w', encoding='utf-8') as f:
@@ -58,9 +76,10 @@ def save_to_csv(data, filename='video_transcripts.csv'):
     filepath = os.path.join('out', filename)
     with open(filepath, 'w', newline='', encoding='utf-8') as f:
         writer = csv.writer(f)
-        writer.writerow(['Title', 'Transcript'])  # Header
+        writer.writerow(['Video ID', 'Title', 'Transcript'])  # Header
         for item in data:
-            writer.writerow([item['title'], item['transcript']])
+            writer.writerow(
+                [item['video_id'], item['title'], item['transcript'][:1000]])
 
     print(f"Transcripts for saved to {filename}")
 
@@ -89,6 +108,6 @@ if __name__ == '__main__':
     # max_results = int(input("Enter the number of top videos to fetch: "))
 
     channel_url = "https://www.youtube.com/@sadhguru"
-    max_results = 1
+    max_results = 25
 
     main(channel_url, max_results)
