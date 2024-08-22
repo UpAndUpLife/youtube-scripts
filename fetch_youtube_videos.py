@@ -4,6 +4,8 @@ import csv
 from dotenv import load_dotenv
 from googleapiclient.discovery import build
 from youtube_transcript_api import YouTubeTranscriptApi
+from pytubefix import YouTube
+from moviepy.editor import *
 
 load_dotenv()
 
@@ -12,6 +14,9 @@ YOUTUBE_DATA_API_KEY = os.getenv('YOUTUBE_DATA_API_KEY')
 youtube = build('youtube', 'v3', developerKey=YOUTUBE_DATA_API_KEY)
 
 os.makedirs('out', exist_ok=True)
+os.makedirs('out/json', exist_ok=True)
+os.makedirs('out/csv', exist_ok=True)
+os.makedirs('out/audio', exist_ok=True)
 
 # Returns channel ID from channel URL
 
@@ -52,9 +57,30 @@ def get_transcript(video_id):
         return "Transcript not available"
 
 
+def download_and_extract_audio(video_id, title):
+    url = f"https://www.youtube.com/watch?v={video_id}"
+    yt = YouTube(url)
+
+    # Download the highest quality video
+    mp4_path = os.path.join('out', 'mp4', f"{video_id}_{title}.mp4")
+    mp3_path = os.path.join('out', 'mp3', f"{video_id}_{title}.mp3")
+
+    audio_stream = yt.streams.filter(only_audio=True).first()
+    audio_file = audio_stream.download(filename=mp4_path)
+
+    print(audio_file)
+
+    # Extract audio using moviepy
+    audio_clip = AudioFileClip(audio_file)
+    audio_clip.write_audiofile(mp3_path)
+
+    # Clean up video file
+    # os.remove(audio_file)
+
+
 # Save video data to JSON file
 def save_to_json(data, filename='video_transcripts.json'):
-    filepath = os.path.join('out', filename)
+    filepath = os.path.join('out', 'json', filename)
     with open(filepath, 'w', encoding='utf-8') as f:
         json.dump(data, f, ensure_ascii=False, indent=4)
 
@@ -63,7 +89,7 @@ def save_to_json(data, filename='video_transcripts.json'):
 
 # Save video data to CSV file
 def save_to_csv(data, filename='video_transcripts.csv'):
-    filepath = os.path.join('out', filename)
+    filepath = os.path.join('out', 'csv', filename)
     with open(filepath, 'w', newline='', encoding='utf-8') as f:
         writer = csv.writer(f)
         writer.writerow(['Video ID', 'Title', 'Transcript'])  # Header
@@ -81,6 +107,7 @@ def main(channel_url, max_results=10):
     results = []
     for video_id, title in top_videos:
         transcript = get_transcript(video_id)
+        download_and_extract_audio(video_id, title)
         results.append({
             'video_id': video_id,
             'title': title,
@@ -96,6 +123,6 @@ if __name__ == '__main__':
     # max_results = int(input("Enter the number of top videos to fetch: "))
 
     channel_url = "https://www.youtube.com/@sadhguru"
-    max_results = 25
+    max_results = 1
 
     main(channel_url, max_results)
