@@ -13,6 +13,8 @@ youtube = build('youtube', 'v3', developerKey=YOUTUBE_DATA_API_KEY)
 
 os.makedirs('out', exist_ok=True)
 
+# Returns channel ID from channel URL
+
 
 def get_channel_id(channel_url):
     # Extract channel ID from URL
@@ -25,6 +27,9 @@ def get_channel_id(channel_url):
     return response['items'][0]['snippet']['channelId']
 
 
+# Returns top N number of videos from a channel based on view count
+# Default is 10 videos
+# Returns a list of tuples (video_id, title)
 def get_top_videos(channel_id, max_results=10):
     # Get top N videos based on view count
     request = youtube.search().list(
@@ -38,6 +43,7 @@ def get_top_videos(channel_id, max_results=10):
     return [(item['id']['videoId'], item['snippet']['title']) for item in response['items']]
 
 
+# Returns the transcript of a video
 def get_transcript(video_id):
     try:
         transcript = YouTubeTranscriptApi.get_transcript(video_id)
@@ -46,24 +52,7 @@ def get_transcript(video_id):
         return "Transcript not available"
 
 
-def chunk_transcript(transcript, max_length=5000):
-    chunks = []
-    current_chunk = ""
-    words = transcript.split()
-
-    for word in words:
-        if len(current_chunk) + len(word) + 1 > max_length:
-            chunks.append(current_chunk.strip())
-            current_chunk = word + " "
-        else:
-            current_chunk += word + " "
-
-    if current_chunk:
-        chunks.append(current_chunk.strip())
-
-    return chunks
-
-
+# Save video data to JSON file
 def save_to_json(data, filename='video_transcripts.json'):
     filepath = os.path.join('out', filename)
     with open(filepath, 'w', encoding='utf-8') as f:
@@ -72,6 +61,7 @@ def save_to_json(data, filename='video_transcripts.json'):
     print(f"Transcripts for saved to {filename}")
 
 
+# Save video data to CSV file
 def save_to_csv(data, filename='video_transcripts.csv'):
     filepath = os.path.join('out', filename)
     with open(filepath, 'w', newline='', encoding='utf-8') as f:
@@ -96,8 +86,6 @@ def main(channel_url, max_results=10):
             'title': title,
             'transcript': transcript
         })
-
-    # print(results)
 
     save_to_json(results, f'video_transcripts_{channel_id}.json')
     save_to_csv(results, f'video_transcripts_{channel_id}.csv')
