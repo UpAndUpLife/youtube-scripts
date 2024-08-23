@@ -104,15 +104,19 @@ def main(channel_url, max_results=10):
     channel_id = get_channel_id(channel_url)
     top_videos = get_top_videos(channel_id, max_results)
 
+    start_counter = 0
+
     results = []
-    for video_id, title in top_videos:
+    for video_id, title in top_videos[start_counter:]:
         transcript = get_transcript(video_id)
         download_and_extract_audio(video_id, title)
         results.append({
+            'index': start_counter,
             'video_id': video_id,
             'title': title,
             'transcript': transcript
         })
+        start_counter += 1
 
     save_to_json(results, f'video_transcripts_{channel_id}.json')
     save_to_csv(results, f'video_transcripts_{channel_id}.csv')
@@ -123,6 +127,6 @@ if __name__ == '__main__':
     # max_results = int(input("Enter the number of top videos to fetch: "))
 
     channel_url = "https://www.youtube.com/@sadhguru"
-    max_results = 1
+    max_results = 10
 
     main(channel_url, max_results)
