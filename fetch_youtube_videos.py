@@ -109,7 +109,8 @@ def main(channel_url, max_results=10):
     results = []
     for video_id, title in top_videos[start_counter:]:
         transcript = get_transcript(video_id)
-        download_and_extract_audio(video_id, title)
+        # Uncomment to download audio
+        # download_and_extract_audio(video_id, title)
         results.append({
             'index': start_counter,
             'video_id': video_id,
